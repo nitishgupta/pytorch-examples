@@ -1,2 +1,2 @@
 # Pytorch Examples
-NLP pytorch to code and explore in pytorch
+NLP example code in pytorch to learn and explore
