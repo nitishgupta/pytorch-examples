@@ -1,6 +1,6 @@
 # Ignore files and folders
 data/
-
+*.save
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
