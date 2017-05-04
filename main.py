@@ -63,43 +63,62 @@ if torch.cuda.is_available():
         torch.cuda.manual_seed(args.seed)
 
 
+""" Reader, model and optimizer should be in __init__ for Train class """
+
 trreader = TrainingDataReader(train_file=args.trdata, val_file=args.valdata,
 							  batch_size=args.batch_size, strict_context=True)
-
 model = Model(vocab_size=trreader.numwords, embed_size=args.emsize,
 			  hidden_size=args.nhid, num_layers=args.nlayers,
 			  numlabels=trreader.numlabels)
-
 model.cuda()
 optimizer = optim.Adam(model.parameters())
+# COMMENT(nitish) : Decide where to go
 criterion = nn.CrossEntropyLoss()
+""" In __init__ up till here """
 
-epochs = trreader.tr_epochs
-
-print(model.ffnet.linear_l2.weight)
-savepath = "m.save"
-steps = utils.load_checkpoint(savepath, model, optimizer)
-
-print(model.ffnet.linear_l2.weight)
-
-while trreader.tr_epochs < 1:
-	steps += 1
-	(leftidxs, leftlens, rightidxs, rightlens, labels) = trreader.next_train_batch()
-	x = Variable(torch.LongTensor(leftidxs)).cuda()
-	lens = Variable(torch.LongTensor(leftlens)).cuda()
-	labels = Variable(torch.LongTensor(labels)).cuda()
-	out = model(x, lens)
-	loss = model.loss(output=out, target=labels, criterion=criterion)
+def optstep(loss):
+	""" Function in Train class
+	Optimizer should be a self of Train class, so only loss needed
+	Could also include gradient clipping by using self.model.parameters()
+	"""
 	optimizer.zero_grad()
 	loss.backward()
 	optimizer.step()
 
-	print(loss.data[0])
 
-	if epochs != trreader.tr_epochs:
-		epochs = trreader.tr_epochs
-		print(epochs)
+def train():
+	""" train function in Train class
+	Figure if model is to be loaded. Load model and opt.
+	loop over batches, get output, calc. loss, make optstep
+	save model at intervals and possibly call validation
+	"""
 
-	optimizer.zero_grad()
+	print(model.ffnet.linear_l2.weight)
+	savepath = "m.save"
+	steps = utils.load_checkpoint(savepath, model, optimizer)
+	print(model.ffnet.linear_l2.weight)
 
-utils.save_checkpoint(model, optimizer, steps, savepath)
+	epochs = trreader.tr_epochs
+	while trreader.tr_epochs < 1:
+		steps += 1
+		(leftidxs, leftlens, rightidxs, rightlens, labels) = trreader.next_train_batch()
+		x = Variable(torch.LongTensor(leftidxs)).cuda()
+		lens = Variable(torch.LongTensor(leftlens)).cuda()
+		labels = Variable(torch.LongTensor(labels)).cuda()
+		out = model(x, lens)
+		loss = model.loss(output=out, target=labels, criterion=criterion)
+		optstep(loss)
+
+		if steps % 100 == 0:
+			print(loss.data[0])
+
+		if epochs != trreader.tr_epochs:
+			epochs = trreader.tr_epochs
+			print(epochs)
+
+		optimizer.zero_grad()
+
+	utils.save_checkpoint(model, optimizer, steps, savepath)
+
+if __name__=="__main__":
+	train()
