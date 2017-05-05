@@ -1,21 +1,20 @@
 import os
 import torch
 import torch.nn as nn
+from collections import defaultdict
 from reader.trainreader import TrainingDataReader
 from torch.autograd import Variable
 from torch.nn.utils.rnn import pack_padded_sequence as packseq
 from torch.nn.utils.rnn import pad_packed_sequence as padseq
-
-from lstmnet import RNNModel
-from ffnet import FF
 
 
 class Model(nn.Module):
 	def __init__(self):
 		super(Model, self).__init__()
 
-		self.linear_l1 = nn.Linear(2,2, False)
-		self.linear_l2 = nn.Linear(2,2, False)
+		self.linear_l2 = nn.Linear(3,2, False)
+		self.linear_l1 = nn.Linear(2,3, False)
+		
 
 
 	def forward(self, x):
@@ -49,6 +48,7 @@ def save_optim(o, path):
 
 def load_optim(o, path):
 	o.load_state_dict(torch.load(path))
+	o.state = defaultdict(dict, o.state)
 
 
 def train(m, o, c):
@@ -66,10 +66,10 @@ def train(m, o, c):
 
 
 m = Model()
-m.parameters()
 o = torch.optim.Adam(m.parameters())
 c = nn.MSELoss()
 
+print(o.state_dict())
 if os.path.exists("m.save"):
 	load(m, "m.save")
 if os.path.exists("o.save"):
@@ -89,3 +89,4 @@ print(o.state_dict())
 save(m, "m.save")
 save_optim(o, "o.save")
 
+print(list(m.parameters()))
