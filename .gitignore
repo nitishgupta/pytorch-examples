@@ -1,5 +1,5 @@
 # Ignore files and folders
-data/
+# data/
 *.save
 # Byte-compiled / optimized / DLL files
 __pycache__/

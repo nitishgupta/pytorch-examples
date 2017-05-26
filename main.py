@@ -99,6 +99,7 @@ def train():
 	print(model.ffnet.linear_l2.weight)
 
 	epochs = trreader.tr_epochs
+	steps = 0
 	while trreader.tr_epochs < 1:
 		steps += 1
 		(leftidxs, leftlens, rightidxs, rightlens, labels) = trreader.next_train_batch()
