@@ -18,6 +18,11 @@ end_word = "<eos>"
 
 # person: 25, event: 10, organization: 5, location: 1
 
+
+def AS(a):
+    return a
+
+
 class TrainingDataReader(object):
 	def __init__(self, train_file, val_file, batch_size,
 							 strict_context=True, pretrain_wordembed=False,
