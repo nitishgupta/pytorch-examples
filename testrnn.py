@@ -61,35 +61,31 @@ class RNNModel(nn.Module):
         h0 = self._cuda(Variable(torch.zeros(1, bs, lstm.hidden_size)))
         c0 = self._cuda(Variable(torch.zeros(1, bs, lstm.hidden_size)))
 
-        #print("X : {} lens : {}".format(x, lens))
-
         sortedlens, sortedidxs = torch.sort(lens, dim=0, descending=True)
-        print(sortedidxs)
         x = x[sortedidxs.data]
 
-        _, originalidxs = torch.sort(sortedidxs, dim=0)
-        print("Original Idxs")
-        print(originalidxs)
-
-        # Embed word ids to vectors
         packed_x = packseq(x, list(sortedlens.data), batch_first=True)
 
         # Forward propagate RNN
         out, (h, c) = lstm(packed_x, (h0, c0))
         h = h.squeeze(0)
         out, _ = padseq(out, batch_first=True)
-        out = out[originalidxs.data]
-        print(out)
+        # out = out[originalidxs.data]
+        print("Out: {}".format(out.data))
+        print("H : {}".format(h.data))
+        hlast = self._cuda(Variable(torch.FloatTensor(bs, out.size(2))))
+        outlast = self._cuda(Variable(torch.FloatTensor(bs,
+                                      out.size(1), out.size(2))))
 
-        # idx = (sortedlens - 1).view(-1, 1).expand(bs, self.lstm.hidden_size).unsqueeze(1)
-        # decoded_sorted = out.gather(1, idx).squeeze()
-        # h == decoded_sorted
+        soridx2d = sortedidxs.unsqueeze(1).expand(bs, out.size(2))
+        soridx3d = sortedidxs.unsqueeze(1).unsqueeze(2).expand(
+            bs, out.size(1), out.size(2))
+        hlast = hlast.scatter_(0, soridx2d, h)
+        outlast = outlast.scatter_(0, soridx3d, out)
 
-        oridx = originalidxs.view(-1, 1).expand(bs, out.size(-1))
-        lstm_output_h = h.gather(0, oridx)
-
-        print(lstm_output_h)
-        return lstm_output_h
+        print("Out unsorted : {}".format(outlast))
+        print("h unsorted : {}".format(hlast))
+        return hlast
 
 if __name__ == '__main__':
     rnnmodel = RNNModel(embed_size=4, hidden_size=3, num_layers=1)
