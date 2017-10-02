@@ -73,13 +73,11 @@ class RNNModel(nn.Module):
         # out = out[originalidxs.data]
         print("Out: {}".format(out.data))
         print("H : {}".format(h.data))
-        hlast = self._cuda(Variable(torch.FloatTensor(bs, out.size(2))))
-        outlast = self._cuda(Variable(torch.FloatTensor(bs,
-                                      out.size(1), out.size(2))))
+        hlast = self._cuda(Variable(h.data.new(*h.data.size())))
+        outlast = self._cuda(Variable(out.data.new(*out.data.size())))
 
-        soridx2d = sortedidxs.unsqueeze(1).expand(bs, out.size(2))
-        soridx3d = sortedidxs.unsqueeze(1).unsqueeze(2).expand(
-            bs, out.size(1), out.size(2))
+        soridx2d = sortedidxs.unsqueeze(1).expand(hlast.size())
+        soridx3d = sortedidxs.unsqueeze(1).unsqueeze(2).expand(outlast.size())
         hlast = hlast.scatter_(0, soridx2d, h)
         outlast = outlast.scatter_(0, soridx3d, out)
 
